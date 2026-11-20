@@ -14,6 +14,10 @@ import { buildAgentStartupPlan } from '../../../../shared/agent-launch/startup/t
 import { resolveResumeLaunchRecipe } from '../../../../shared/agent-launch/choices/resume-launch-recipe'
 import { resolveAgentStartupPlanInputs } from '../../../../shared/agent-launch/startup/agent-startup-plan-inputs'
 import {
+  readHostManagedAgentCommands,
+  readHostManagedAgentCommandsSync
+} from '../../rpc/methods/host-management/managed-copy-detection'
+import {
   resolveWslHostAgentLaunchInputs,
   resolveWslHostAgentResumeInputs
 } from './wsl-host-agent-terminal-launch'
@@ -58,6 +62,14 @@ export type MobileTerminalResumeCommand = MobileTerminalCommand & {
   resumeProviderSession: AgentProviderSessionMetadata
 }
 
+/** Orca's copies live on this host, so launches over SSH or inside WSL never run them. */
+function runsOnThisHost(
+  workspace: TerminalWorkspaceLaunchScope,
+  launchRuntime: { platform: NodeJS.Platform }
+): boolean {
+  return !workspace.connectionId && launchRuntime.platform === process.platform
+}
+
 function normalizeOriginConnectionId(connectionId: string | null | undefined): string | null {
   return connectionId?.trim() || null
 }
@@ -95,7 +107,10 @@ export abstract class OrcaRuntimeWithResolveMobileSessionTerminalCommand extends
       platform: launchRuntime.platform,
       shell: agentLaunchQuotingShell(launchRuntime),
       isRemote: Boolean(workspace.connectionId),
-      launchCwd: workspace.path
+      launchCwd: workspace.path,
+      ...(runsOnThisHost(workspace, launchRuntime)
+        ? { managedAgentCommands: readHostManagedAgentCommandsSync(settings) }
+        : {})
     })
     const startupPlan = buildAgentResumeStartupPlan(resumeInputs)
     if (!startupPlan) {
@@ -143,7 +158,10 @@ export abstract class OrcaRuntimeWithResolveMobileSessionTerminalCommand extends
           platform: launchRuntime.platform,
           shell: agentLaunchQuotingShell(launchRuntime),
           // SSH uses relay-shim orca, never the local Linux orca-ide rename.
-          isRemote: Boolean(workspace.connectionId)
+          isRemote: Boolean(workspace.connectionId),
+          ...(runsOnThisHost(workspace, launchRuntime)
+            ? { managedAgentCommands: await readHostManagedAgentCommands(settings) }
+            : {})
         })
       ),
       prompt: opts.agentPrompt ?? '',

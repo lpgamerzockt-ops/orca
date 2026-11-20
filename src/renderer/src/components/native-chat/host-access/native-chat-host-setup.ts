@@ -1,3 +1,5 @@
+import { isTuiAgent } from '../../../../../shared/agent-launch/catalog/tui-agent-config'
+import { readManagedAgentCommandsForWorktree } from '@/lib/agent-session/launch/inventory/agent-detection-target-inventory'
 import { createContext, useCallback, useContext, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { translate } from '@/i18n/i18n'
@@ -217,10 +219,16 @@ function useNativeChatSignIn(
       }) ?? (platform === 'win32' ? null : 'posix')
     )
   })
+  const managedCommand = useAppStore((s) =>
+    isTuiAgent(input.agent)
+      ? (readManagedAgentCommandsForWorktree(s, input.worktreeId)?.[input.agent] ?? null)
+      : null
+  )
   const command = agentSessionSignInCommand(input.agent, {
     account: input.account,
     remote: input.target.kind !== 'local',
-    shell
+    shell,
+    managedCommand
   })
   const { agent } = input
   const viaTerminal = useMemo(

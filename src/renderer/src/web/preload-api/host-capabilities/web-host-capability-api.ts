@@ -68,12 +68,13 @@ export function createPreflightApi(): NonNullable<Partial<PreloadApi>['preflight
     },
     // The zcode probe spawns a host CLI; web must not decide the host’s install state.
     zcodeInteractiveCapability: async () => 'unknown' as const,
-    detectAgents: async () => {
+    detectAgents: (async (args?: { withManagedAgentCommands?: boolean }) => {
+      const params = args?.withManagedAgentCommands ? { withManagedAgentCommands: true } : undefined
       if (!requireActiveEnvironmentOrNull()) {
         return []
       }
-      return callRuntimeResult<string[]>('preflight.detectAgents').catch(() => [])
-    },
+      return callRuntimeResult<string[]>('preflight.detectAgents', params).catch(() => [])
+    }) as PreloadApi['preflight']['detectAgents'],
     refreshAgents: (args) =>
       requireActiveEnvironmentOrNull()
         ? callRuntimeResult('preflight.refreshAgents', args)

@@ -28,13 +28,8 @@ export const preflightApi = {
     }
     linear: { connected: boolean }
   }> => ipcRenderer.invoke('preflight:check', args),
-  detectAgents: (
-    args?: PreflightRuntimeContext & {
-      enabledOnly?: boolean
-      wakeWslDistro?: boolean
-      userInitiated?: boolean
-    }
-  ): Promise<string[]> => ipcRenderer.invoke('preflight:detectAgents', args),
+  detectAgents: ((args?: PreflightRuntimeContext & { withManagedAgentCommands?: boolean }) =>
+    ipcRenderer.invoke('preflight:detectAgents', args)) as PreloadApi['preflight']['detectAgents'],
   onWslDistroRunning: (callback: (distro: string) => void): (() => void) => {
     const listener = (_event: Electron.IpcRendererEvent, distro: string): void => callback(distro)
     ipcRenderer.on('preflight:wslDistroRunning', listener)
