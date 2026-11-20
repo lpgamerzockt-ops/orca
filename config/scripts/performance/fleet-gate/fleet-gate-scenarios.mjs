@@ -515,6 +515,7 @@ async function switchWorkspaces({ page, windowMs }) {
 export const SCENARIO_SETUP = { typing: showTerminalWorkspace, switch: dismissOverlays }
 
 export const SCENARIOS = {
+  heavyburst: (input) => import('./fleet-gate-heap-churn.mjs').then((m) => m.heavyChatBurst(input)),
   idle: async ({ windowMs }) => {
     await sleep(windowMs)
     return { note: 'no input' }

@@ -124,7 +124,7 @@ async function finishHeapChurn() {
     rssMb: lastSample ? mb(lastSample.rss) : null,
     gc: { ms: Math.round(state.gcMs), majorMs: Math.round(state.gcMajorMs), count: state.gcCount, maxMs: Math.round(state.gcMaxMs) },
     timeline: state.samples
-      .filter((_, i) => i % 15 === 0)
+      .filter((_, i) => i % 5 === 0)
       .map((s) => [Math.round(s.t / 1000), mb(s.committed), mb(s.used)]),
     topFiles: top(byFile, 25),
     topSites: top(bySite, 40)
@@ -141,4 +141,28 @@ export async function reportHeapChurn(electronApp, label) {
   }
   const summary = await electronApp.evaluate(finishHeapChurn).catch((error) => ({ error: String(error) }))
   console.log(`HEAPCHURN ${label} ${JSON.stringify(summary)}`)
+}
+
+/** Measurement-only scenario: many chats stream large tool turns at once through the real native-chat path. */
+export async function heavyChatBurst({ page, userDataDir, windowMs }) {
+  const { default: fs } = await import('node:fs')
+  const { default: path } = await import('node:path')
+  const { createChatBurst, pointClaudeAtStub } = await import('./fleet-gate-launch-burst.mjs')
+  const stubDir = path.join(path.dirname(userDataDir), 'heavy-stub')
+  fs.mkdirSync(stubDir, { recursive: true })
+  const script = path.join(import.meta.dirname, 'fleet-gate-heavy-claude-stub.cjs')
+  const command = path.join(stubDir, 'claude')
+  const quote = (value) => `'${value.replaceAll("'", `'\\''`)}'`
+  fs.writeFileSync(
+    command,
+    `#!/bin/sh\nexec ${quote(process.execPath)} ${quote(script)} ${quote(path.join(stubDir, 'launches.jsonl'))} "$@"\n`
+  )
+  fs.chmodSync(command, 0o755)
+  await pointClaudeAtStub(page, command)
+  const chats = Number(process.env.FLEET_HEAVY_CHATS ?? 100)
+  const burst = await createChatBurst(page, chats, 0, 'heavy fleet turn')
+  await new Promise((resolve) => setTimeout(resolve, windowMs))
+  return {
+    note: `${burst.sessionIds.length} of ${chats} heavy chats (${burst.refused.length} refused${burst.refused[0] ? `: ${burst.refused[0]}` : ''})`
+  }
 }
