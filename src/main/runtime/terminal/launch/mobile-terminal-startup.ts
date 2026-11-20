@@ -13,10 +13,7 @@ import { buildAgentResumeStartupPlan } from '../../../../shared/agent-launch/sta
 import { buildAgentStartupPlan } from '../../../../shared/agent-launch/startup/tui-agent-startup'
 import { resolveResumeLaunchRecipe } from '../../../../shared/agent-launch/choices/resume-launch-recipe'
 import { resolveAgentStartupPlanInputs } from '../../../../shared/agent-launch/startup/agent-startup-plan-inputs'
-import {
-  readHostManagedAgentCommands,
-  readHostManagedAgentCommandsSync
-} from '../../rpc/methods/host-management/managed-copy-detection'
+import { readHostManagedAgentCommands } from '../../rpc/methods/host-management/managed-copy-detection'
 import {
   resolveWslHostAgentLaunchInputs,
   resolveWslHostAgentResumeInputs
@@ -76,10 +73,10 @@ function normalizeOriginConnectionId(connectionId: string | null | undefined): s
 
 export abstract class OrcaRuntimeWithResolveMobileSessionTerminalCommand extends OrcaRuntimeWithRunCreateMobileSessionTerminal {
   /** The `--resume` launch for a pane's recorded agent session, as the host window's cold restore builds it. */
-  protected resolveMobileSessionResumeCommand(
+  protected async resolveMobileSessionResumeCommand(
     workspace: TerminalWorkspaceLaunchScope,
     record: ResumableAgentSessionSource
-  ): MobileTerminalResumeCommand | null {
+  ): Promise<MobileTerminalResumeCommand | null> {
     const providerSession = normalizeAgentProviderSession(record.providerSession)
     if (!this.store || !providerSession || !isResumableTuiAgent(record.agent)) {
       return null
@@ -109,7 +106,7 @@ export abstract class OrcaRuntimeWithResolveMobileSessionTerminalCommand extends
       isRemote: Boolean(workspace.connectionId),
       launchCwd: workspace.path,
       ...(runsOnThisHost(workspace, launchRuntime)
-        ? { managedAgentCommands: readHostManagedAgentCommandsSync(settings) }
+        ? { managedAgentCommands: await readHostManagedAgentCommands(settings) }
         : {})
     })
     const startupPlan = buildAgentResumeStartupPlan(resumeInputs)

@@ -11,8 +11,7 @@ import { isTuiAgent } from '../../../../shared/agent-launch/catalog/tui-agent-co
 import type { TuiAgent } from '../../../../shared/agent-launch/catalog/tui-agent'
 import type { AgentStartupShell } from '../../../../shared/agent-launch/startup/tui-agent-startup-shell'
 import { resolveWslHostAgentCmdOverrides } from './wsl-host-agent-terminal-launch'
-import { readHostManagedAgentCommandsSync } from '../../rpc/methods/host-management/managed-copy-detection'
-import type { ManagedCopySettings } from '../../../acp/launch/acp-launch-contract'
+import type { ManagedAgentCommands } from '../../../../shared/agent-launch/startup/managed-agent-launch-program'
 import {
   type AiVaultResumeLaunchSettings,
   assertAiVaultCopiedSessionStoreAllowed,
@@ -24,8 +23,10 @@ import { getAiVaultResumeCodexHome } from '../../../../shared/ai-vault/resume/ai
 /** One native execution fact builds the line and chooses the shell that receives it. */
 export function buildMobileTerminalChatFork(args: {
   prepared: AiVaultPrepareSessionResumeResult
-  settings: AiVaultResumeLaunchSettings & ManagedCopySettings
+  settings: AiVaultResumeLaunchSettings
   runtime: AgentLaunchRuntime
+  /** Orca's copies on this host, which is where forks run. */
+  managedAgentCommands?: ManagedAgentCommands
 }): MobileTerminalCommand & {
   command: string
   cwd?: string
@@ -57,8 +58,7 @@ export function buildMobileTerminalChatFork(args: {
     settings: isTuiAgent(source.agent)
       ? withWslHostAgentCommand(settings, source.agent, runtime.platform, liveShell)
       : settings,
-    // The checks above keep forks on this host, where Orca's copies live.
-    managedAgentCommands: readHostManagedAgentCommandsSync(settings)
+    managedAgentCommands: args.managedAgentCommands
   }
   if (prepared.forkedSession) {
     assertAiVaultCopiedSessionStoreAllowed(startupArgs)

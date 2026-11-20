@@ -123,7 +123,10 @@ export function agentSessionSignInEnv(
 }
 
 /** Bypass the selected-profile function and restore the config Orca replaced for this login. */
-function claudeSystemSignInCommand(shell: AgentStartupShell, managedCommand?: string | null): string {
+function claudeSystemSignInCommand(
+  shell: AgentStartupShell,
+  managedCommand?: string | null
+): string {
   const program = managedCommand ? buildShellCommandFromArgv([managedCommand], shell) : null
   if (shell === 'powershell') {
     return [

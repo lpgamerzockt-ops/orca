@@ -22,6 +22,7 @@ import {
 } from './tui-agent-startup-shell'
 import type { TuiAgent } from '../catalog/tui-agent'
 import { withManagedAgentProgram, type ManagedAgentCommands } from './managed-agent-launch-program'
+import { antigravityModelArgs } from './antigravity-resume-model-args'
 
 // Why: Enter on Codex's "Update available" screen picks "Update now", which installs and exits.
 const STARTUP_UPDATE_PROMPT_SUPPRESSION_ARGS: Partial<Record<TuiAgent, readonly string[]>> = {
@@ -212,20 +213,6 @@ export function resolveAgentLaunchCommand(args: {
       ? { startupEnv: STARTUP_UPDATE_PROMPT_SUPPRESSION_ENV[args.agent] }
       : {})
   }
-}
-
-/** The resolved `--model <id>` (or `--model=<id>`) tokens, without any other launch option. */
-function antigravityModelArgs(tokens: readonly string[]): string[] {
-  for (let index = 0; index < tokens.length; index += 1) {
-    const token = tokens[index]
-    if (token.startsWith('--model=')) {
-      return [token]
-    }
-    if (token === '--model' && index + 1 < tokens.length) {
-      return [token, tokens[index + 1]]
-    }
-  }
-  return []
 }
 
 function insertBeforeTerminator(

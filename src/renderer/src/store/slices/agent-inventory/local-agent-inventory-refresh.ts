@@ -1,4 +1,7 @@
-import { localManagedAgentInventoryKey, readAgentDetectionReply } from './managed-agent-launch-commands'
+import {
+  localManagedAgentInventoryKey,
+  readAgentDetectionReply
+} from './managed-agent-launch-commands'
 import { FLOATING_TERMINAL_WORKTREE_ID } from '../../../../../shared/workspace/identity/floating-workspace-id'
 import { filterEnabledTuiAgents } from '../../../../../shared/agent-launch/catalog/tui-agent-selection'
 import { getLocalAgentPreflightContext } from '@/runtime/hosts/preflight/local-preflight-context'

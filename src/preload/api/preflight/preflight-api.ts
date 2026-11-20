@@ -33,7 +33,10 @@ type AgentDetectionArgs = PreflightRuntimeContext & {
   userInitiated?: boolean
 }
 
-export type AgentInventoryReply = { agents: string[]; managedAgentCommands?: Record<string, string> }
+export type AgentInventoryReply = {
+  agents: string[]
+  managedAgentCommands?: Record<string, string>
+}
 
 export type RefreshAgentsResult = {
   agents: string[]

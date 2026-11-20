@@ -16,7 +16,6 @@ import { getProfileUserDataPath } from '../../../../orca-profiles/profile-storag
 import { provideInstalledManagedAgents } from '../../../../preflight/managed-agent-detection'
 import { notifyAgentsRefreshedOnHost } from '../../../../preflight/agents-refreshed-on-host'
 import { resolveCliCommandAsync } from '../../../../../shared/shell/command-resolution/node-cli-command-async-resolution'
-import { resolveCliCommand } from '../../../../../shared/shell/command-resolution/node-cli-command-resolution'
 import {
   getTuiAgentLaunchCommand,
   isTuiAgent,
@@ -106,10 +105,16 @@ function managedCopyCandidates(settings: ManagedCopySettings): ManagedCopyCandid
   try {
     return MANAGED_AGENT_CLI_IDS.flatMap((agent) => {
       const path = isTuiAgent(agent) ? installedManagedAgentCommand(agent) : null
-      if (!path || !isTuiAgent(agent) || standInSpec(agent)?.managedCopyAllowed?.(settings) === false) {
+      if (
+        !path ||
+        !isTuiAgent(agent) ||
+        standInSpec(agent)?.managedCopyAllowed?.(settings) === false
+      ) {
         return []
       }
-      const [program] = getTuiAgentLaunchCommand(TUI_AGENT_CONFIG[agent], process.platform).split(' ')
+      const [program] = getTuiAgentLaunchCommand(TUI_AGENT_CONFIG[agent], process.platform).split(
+        ' '
+      )
       return managedAgentStandsInFor(agent, program) ? [{ agent, path, program }] : []
     })
   } catch (error) {
@@ -122,15 +127,14 @@ function managedCommandsWithoutOwn(
   candidates: readonly ManagedCopyCandidate[],
   own: readonly string[]
 ): ManagedAgentCommands {
-  return Object.fromEntries(
-    candidates
-      .filter(({ agent, program }, index) => {
-        const found = own[index]
-        // A program found on PATH or in its installer's folder is the user's, unless it is Orca's.
-        return found === program || isManagedAgentCopyPath(agent, found)
-      })
-      .map(({ agent, path }) => [agent, path])
-  ) as ManagedAgentCommands
+  const commands: ManagedAgentCommands = {}
+  candidates.forEach(({ agent, path, program }, index) => {
+    // A program found on PATH or in its installer's folder is the user's, unless it is Orca's.
+    if (own[index] === program || isManagedAgentCopyPath(agent, own[index])) {
+      commands[agent] = path
+    }
+  })
+  return commands
 }
 
 /** Full paths to Orca's copies this host launches: installed, allowed to run, and standing in for a
@@ -146,17 +150,4 @@ export async function readHostManagedAgentCommands(
     candidates.map(({ program }) => resolveCliCommandAsync(program).catch(() => program))
   )
   return managedCommandsWithoutOwn(candidates, own)
-}
-
-/** The same, for resume builders that run synchronously. */
-export function readHostManagedAgentCommandsSync(
-  settings: ManagedCopySettings
-): ManagedAgentCommands {
-  const candidates = managedCopyCandidates(settings)
-  return candidates.length === 0
-    ? {}
-    : managedCommandsWithoutOwn(
-        candidates,
-        candidates.map(({ program }) => resolveCliCommand(program))
-      )
 }

@@ -264,7 +264,9 @@ export const createRuntimeDetectedAgentsSlice: (
               options.userInitiated ? { ...params, userInitiated: true } : params,
               fence
             )
-              .then((result) => readAgentDetectionReply(result, runtimeManagedAgentInventoryKey(key)))
+              .then((result) =>
+                readAgentDetectionReply(result, runtimeManagedAgentInventoryKey(key))
+              )
               .catch((error) => {
                 if (!isRuntimeMethodNotFoundError(error)) {
                   throw error
