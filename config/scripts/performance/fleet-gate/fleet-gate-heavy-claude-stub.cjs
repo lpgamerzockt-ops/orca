@@ -4,7 +4,7 @@ const { randomUUID } = require('node:crypto')
 const fs = require('node:fs')
 
 const [launchLog, ...args] = process.argv.slice(2)
-fs.appendFileSync(launchLog, `${JSON.stringify({ pid: process.pid, args })}\n`)
+fs.appendFileSync(launchLog, `${JSON.stringify({ pid: process.pid, at: Date.now(), args })}\n`)
 
 if (args.includes('--version') || args.includes('-v')) {
   process.stdout.write('2.1.280 (Claude Code)\n')

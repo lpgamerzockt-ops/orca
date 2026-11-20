@@ -216,9 +216,30 @@ export async function heavyChatBurst({ page, userDataDir, windowMs }) {
   fs.chmodSync(command, 0o755)
   await pointClaudeAtStub(page, command)
   const chats = Number(process.env.FLEET_HEAVY_CHATS ?? 100)
+  const startedAt = Date.now()
   const burst = await createChatBurst(page, chats, 0, 'heavy fleet turn')
+  const createdMs = Date.now() - startedAt
   await new Promise((resolve) => setTimeout(resolve, windowMs))
+  const launches = fs
+    .readFileSync(path.join(stubDir, 'launches.jsonl'), 'utf8')
+    .split('\n')
+    .filter(Boolean)
+    .map((line) => JSON.parse(line))
+    .filter((launch) => launch.at >= startedAt && !launch.args.includes('--version'))
+  const chatLaunches = launches.filter((launch) => launch.args.includes('--input-format'))
+  const namingLaunches = launches.filter((launch) => !launch.args.includes('--input-format'))
+  const lastAt = (list) => (list.length ? Math.max(...list.map((launch) => launch.at)) - startedAt : null)
+  const sortedChat = chatLaunches.map((launch) => launch.at - startedAt).sort((a, b) => a - b)
+  const launch = {
+    createdMs,
+    chatLaunches: chatLaunches.length,
+    chatLaunchP50Ms: sortedChat[Math.floor(sortedChat.length / 2)] ?? null,
+    chatLaunchLastMs: lastAt(chatLaunches),
+    namingLaunches: namingLaunches.length,
+    namingLaunchLastMs: lastAt(namingLaunches)
+  }
+  console.log(`LAUNCH ${JSON.stringify(launch)}`)
   return {
-    note: `${burst.sessionIds.length} of ${chats} heavy chats (${burst.refused.length} refused${burst.refused[0] ? `: ${burst.refused[0]}` : ''})`
+    note: `${burst.sessionIds.length} of ${chats} heavy chats (${burst.refused.length} refused${burst.refused[0] ? `: ${burst.refused[0]}` : ''}); launch ${JSON.stringify(launch)}`
   }
 }
