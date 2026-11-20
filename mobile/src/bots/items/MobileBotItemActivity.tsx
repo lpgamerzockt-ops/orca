@@ -31,7 +31,6 @@ import {
   type MobileBotItemAttachmentSource
 } from './MobileBotItemCommentAttachments'
 import { formatPhoneSnoozeTime } from './bot-item-snooze-time'
-import { getUiIntlLocale } from '../../i18n/ui-intl-locale'
 import { useMobileTranslation } from '../../i18n/use-mobile-translation'
 import { botItemQuestionShape } from '../../../../src/shared/bots/bot-item-ask'
 import { MobileBotItemQuestionLines } from './MobileBotItemQuestionLines'
@@ -41,17 +40,12 @@ import { themedStyleSheet } from '../../theme/themed-styles'
 import { useMobileColorScheme } from '../../theme/use-mobile-color-scheme'
 import { MobileBotItemReplyQuote } from './MobileBotItemReplyQuote'
 import { MobileBotItemStatusIcon } from './MobileBotItemStatusIcon'
+import { useMobileMessageTime } from '../../session/native-chat/transcript/messages/use-mobile-message-time'
 
 const ICON = 13
 
 function str(value: unknown): string {
   return typeof value === 'string' ? value : ''
-}
-
-function timeOf(at: number): string {
-  return new Intl.DateTimeFormat(getUiIntlLocale(), { hour: 'numeric', minute: '2-digit' }).format(
-    at
-  )
 }
 
 function fieldName(field: string, t: Translate): string {
@@ -259,15 +253,20 @@ function CommentCard({
 }) {
   const t = useMobileTranslation()
   const { event, replyTo, waiting } = entry
+  const time = useMobileMessageTime()
   const mine = event.actor.kind === 'owner'
   const shape = botItemQuestionShape(event.data)
   const text = mobileBotItemCommentWords({ ...event.data, text: shape.body })
   return (
     <View style={[styles.card, mine && styles.cardMine]}>
       <View style={styles.cardHead}>
-        <Text style={styles.author}>{botItemActorName(event, item, t)}</Text>
+        <Text style={[styles.author, styles.shrink]} numberOfLines={1}>
+          {botItemActorName(event, item, t)}
+        </Text>
         <View style={styles.spacer} />
-        <Text style={styles.meta}>{timeOf(event.at)}</Text>
+        <Text style={styles.meta} accessibilityLabel={time.full(event.at)}>
+          {time.label(event.at)}
+        </Text>
       </View>
       {replyTo ? <MobileBotItemReplyQuote text={replyTo.text} /> : null}
       <MobileBotItemCommentAttachments data={event.data} {...attachments}>
@@ -291,6 +290,7 @@ export function MobileBotItemActivity({
 }) {
   useMobileColorScheme()
   const t = useMobileTranslation()
+  const time = useMobileMessageTime()
   const entries = botItemActivity(item, events)
   return (
     <View>
@@ -309,7 +309,9 @@ export function MobileBotItemActivity({
                 <EventLine event={entry.event} item={item} />
               )}
             </View>
-            <Text style={styles.meta}>{timeOf(entry.at)}</Text>
+            <Text style={styles.meta} accessibilityLabel={time.full(entry.at)}>
+              {time.label(entry.at)}
+            </Text>
           </View>
         )
       )}
@@ -369,6 +371,7 @@ const styles = themedStyleSheet(() => ({
     marginBottom: spacing.xs
   },
   author: { fontSize: 13, fontWeight: '600', color: colors.textPrimary },
+  shrink: { flexShrink: 1 },
   meta: { fontSize: typography.metaSize, color: colors.textMuted, fontVariant: ['tabular-nums'] },
   spacer: { flex: 1 }
 }))
