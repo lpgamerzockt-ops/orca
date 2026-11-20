@@ -44,7 +44,9 @@ const SPECS = {
   antigravity: acpLaunchSpecFor('antigravity')!,
   cursor: acpLaunchSpecFor('cursor')!,
   hermes: acpLaunchSpecFor('hermes')!,
-  copilot: acpLaunchSpecFor('copilot')!
+  copilot: acpLaunchSpecFor('copilot')!,
+  kilo: acpLaunchSpecFor('kilo')!,
+  'mimo-code': acpLaunchSpecFor('mimo-code')!
 }
 
 const ACCOUNT_HOMES: Record<keyof typeof SPECS, AgentSessionRecord['accountHome']> = {
@@ -54,14 +56,18 @@ const ACCOUNT_HOMES: Record<keyof typeof SPECS, AgentSessionRecord['accountHome'
   antigravity: { variable: 'GEMINI_HOME', path: '/home/user/orca-data/antigravity-chat' },
   cursor: { variable: 'CURSOR_CONFIG_DIR', path: '/home/user/.cursor' },
   hermes: { variable: 'HERMES_HOME', path: '/home/user/.hermes' },
-  copilot: { variable: 'COPILOT_HOME', path: '/home/user/.copilot' }
+  copilot: { variable: 'COPILOT_HOME', path: '/home/user/.copilot' },
+  kilo: { variable: 'XDG_DATA_HOME', path: '/home/user/.local/share' },
+  'mimo-code': { variable: 'XDG_DATA_HOME', path: '/home/user/.local/share' }
 }
 
 const PROBED_VERSIONS: Partial<Record<keyof typeof SPECS, string>> = {
   omp: '17.2.9',
   cursor: '2026.11.19-f005e9d',
   hermes: '0.23.3',
-  copilot: '1.0.114'
+  copilot: '1.0.114',
+  kilo: '7.8.32',
+  'mimo-code': '0.1.17'
 }
 
 let dataDirectory = ''
@@ -138,6 +144,25 @@ describe('ACP launch: standing instructions', () => {
     expect(config.instructions[0]).toBe('/home/user/mine.md')
     await expectPrivateFile(config.instructions[1])
   })
+
+  it.each([
+    ['kilo', 'KILO_CONFIG_CONTENT'],
+    ['mimo-code', 'MIMOCODE_CONFIG_CONTENT']
+  ] as const)(
+    "adds them to the OpenCode fork %s's inline instructions after the user's own",
+    async (agent, variable) => {
+      const mine = JSON.stringify({ model: 'x/y', instructions: ['/home/user/mine.md'] })
+      const resolved = await launch(agent, {
+        instructions: PREAMBLE,
+        launchEnv: { [variable]: mine }
+      })
+      const config = JSON.parse(resolved.env[variable] ?? '')
+      expect(config).toMatchObject({ model: 'x/y' })
+      expect(config.instructions[0]).toBe('/home/user/mine.md')
+      await expectPrivateFile(config.instructions[1])
+      expect(resolved.env.OPENCODE_CONFIG_CONTENT).toBeUndefined()
+    }
+  )
 
   it("gives OpenCode 2.x them after the user's own global AGENTS.md, in a config folder linking the rest of theirs", async () => {
     const xdg = join(dataDirectory, 'opencode-xdg')
