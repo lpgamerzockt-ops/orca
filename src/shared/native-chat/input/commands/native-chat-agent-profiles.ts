@@ -93,7 +93,12 @@ const NATIVE_CHAT_AGENT_PROFILES: Record<NativeChatAgent, NativeChatAgentProfile
   hermes: null,
   // Both report their user and project skills as `skill:<name>`, at rest too.
   kimi: null,
-  omp: null
+  omp: null,
+  // Droid reports skills only once a session starts, so resting chats rely on the scan.
+  droid: {
+    skillPrefix: '/',
+    skillSourceOwner: 'droid'
+  }
 }
 
 /** Whether `skill` under `source` reaches `profile`'s agent: shared roots, its own, and the skill
