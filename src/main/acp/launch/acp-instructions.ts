@@ -105,6 +105,11 @@ export const deliverOmpInstructions: AcpInstructionsDelivery = async ({ file }) 
   args: [`--append-system-prompt=${await file()}`]
 })
 
+// Droid rebuilds its system prompt at every start from the file each launch passes.
+export const deliverDroidInstructions: AcpInstructionsDelivery = async ({ file }) => ({
+  args: ['--append-system-prompt-file', await file()]
+})
+
 // Cursor reads its folder's rules once, when a session opens, and keeps them across reopens.
 export const deliverCursorInstructions: AcpInstructionsDelivery = async ({ text }) => ({
   aroundNewSession: (cwd) => placeCursorOpeningRule(cwd, text)
