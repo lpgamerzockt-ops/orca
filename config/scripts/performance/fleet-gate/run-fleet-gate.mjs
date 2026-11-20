@@ -24,6 +24,7 @@ import { waitForAppWindow } from './fleet-gate-app-ready.mjs'
 import { parseArgs } from './fleet-gate-args.mjs'
 import { hotPathChanges, isHotPath } from './fleet-gate-hot-paths.mjs'
 import { installMainProbeIn, resetMainProbe, snapshotMainProbe } from './fleet-gate-main-probe.mjs'
+import { jsFlagsFor, reportHeapChurn, startHeapChurn } from './fleet-gate-heap-churn.mjs'
 import { installRendererProbe } from './fleet-gate-renderer-probe.mjs'
 import { burstRows, compareRuns, formatTable, windowMetrics } from './fleet-gate-report.mjs'
 import {
@@ -166,7 +167,7 @@ async function launchCopy({ buildDir, runDir, userDataDir, label, outDir, extraE
   try {
     app = await electron.launch({
       executablePath,
-      args: [launchRecord.arg, ...launchArgs(buildDir)],
+      args: [launchRecord.arg, ...jsFlagsFor(label), ...launchArgs(buildDir)],
       env: { ...isolatedEnv(runDir, userDataDir), ...extraEnv },
       timeout: 180_000
     })
@@ -349,6 +350,7 @@ async function measureOnce({ arm, sha, buildDir, seedDir, options, runDir, outDi
   const { app, page, close } = await launchCopy({ buildDir, runDir, userDataDir, label, outDir })
   try {
     const probeState = await installMainProbeIn(app)
+    await startHeapChurn(app)
     if (probeState === 'installed-without-invoke') {
       result.incomplete.push('main probe could not count invoke(): R→M would miss requests')
     }
@@ -425,6 +427,7 @@ async function measureOnce({ arm, sha, buildDir, seedDir, options, runDir, outDi
         `[fleet-gate] ${label} ${name}: ${JSON.stringify(result.windows[name].metrics)} ${driven.note ?? ''} top M→R ${result.windows[name].topOut.join('; ')}`
       )
     }
+    await reportHeapChurn(app, label)
   } finally {
     await close()
     removeRunDir(runDir)
