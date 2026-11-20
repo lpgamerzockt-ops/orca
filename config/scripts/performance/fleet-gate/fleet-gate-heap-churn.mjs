@@ -56,7 +56,14 @@ function installHeapChurn() {
   const timer = setInterval(sample, 2000)
   timer.unref?.()
   globalThis.__fleetHeapChurn = { state, post, timer, observer, session }
-  return post('HeapProfiler.enable').then(() =>
+  const cpu = process.env.FLEET_CPU_PROFILE === '1'
+  state.cpu = cpu
+  const startCpu = cpu
+    ? post('Profiler.enable')
+        .then(() => post('Profiler.setSamplingInterval', { interval: 2000 }))
+        .then(() => post('Profiler.start'))
+    : Promise.resolve()
+  return startCpu.then(() => post('HeapProfiler.enable')).then(() =>
     post('HeapProfiler.startSampling', {
       samplingInterval: 65536,
       includeObjectsCollectedByMajorGC: true,
@@ -75,6 +82,7 @@ async function finishHeapChurn() {
   const v8 = process.getBuiltinModule('node:v8')
   const last = v8.getHeapStatistics()
   const { profile } = await post('HeapProfiler.stopSampling')
+  const cpuProfile = state.cpu ? (await post('Profiler.stop')).profile : null
   observer.disconnect()
   session.disconnect()
   delete globalThis.__fleetHeapChurn
@@ -104,6 +112,53 @@ async function finishHeapChurn() {
   }
   walk(profile.head, [])
   const mb = (bytes) => Math.round(bytes / 1048576)
+  function summarizeCpu(cpuProfile, short) {
+    const byId = new Map(cpuProfile.nodes.map((node) => [node.id, node]))
+    const parent = new Map()
+    for (const node of cpuProfile.nodes) {
+      for (const child of node.children ?? []) {
+        parent.set(child, node.id)
+      }
+    }
+    const keyOf = (node) => {
+      const f = node.callFrame
+      return f.url ? `${f.functionName || '(anon)'} ${short(f.url)}:${f.lineNumber + 1}` : f.functionName || '(native)'
+    }
+    const self = new Map()
+    const incl = new Map()
+    const buckets = new Map()
+    let t = cpuProfile.startTime
+    let busy = 0
+    for (let i = 0; i < cpuProfile.samples.length; i += 1) {
+      const delta = (cpuProfile.timeDeltas[i] ?? 0) / 1000
+      t += cpuProfile.timeDeltas[i] ?? 0
+      const leaf = byId.get(cpuProfile.samples[i])
+      const leafKey = keyOf(leaf)
+      self.set(leafKey, (self.get(leafKey) ?? 0) + delta)
+      if (leafKey === '(idle)' || leafKey === '(program)') {
+        continue
+      }
+      busy += delta
+      const bucket = Math.floor((t - cpuProfile.startTime) / 10_000_000)
+      buckets.set(bucket, (buckets.get(bucket) ?? 0) + delta)
+      const seen = new Set()
+      for (let id = leaf.id; id !== undefined; id = parent.get(id)) {
+        const key = keyOf(byId.get(id))
+        if (!seen.has(key)) {
+          seen.add(key)
+          incl.set(key, (incl.get(key) ?? 0) + delta)
+        }
+      }
+    }
+    const rank = (map, n) =>
+      [...map.entries()].sort((a, b) => b[1] - a[1]).slice(0, n).map(([key, ms]) => [Math.round(ms), key])
+    return {
+      busyMs: Math.round(busy),
+      busyPer10s: [...buckets.entries()].sort((a, b) => a[0] - b[0]).map(([b, ms]) => [b * 10, Math.round(ms)]),
+      topSelf: rank(self, 40),
+      topInclusive: rank(incl, 60)
+    }
+  }
   const top = (map, n) =>
     [...map.entries()]
       .sort((a, b) => b[1] - a[1])
@@ -126,6 +181,7 @@ async function finishHeapChurn() {
     timeline: state.samples
       .filter((_, i) => i % 5 === 0)
       .map((s) => [Math.round(s.t / 1000), mb(s.committed), mb(s.used)]),
+    cpu: cpuProfile ? summarizeCpu(cpuProfile, shortUrl) : null,
     topFiles: top(byFile, 25),
     topSites: top(bySite, 40)
   }
