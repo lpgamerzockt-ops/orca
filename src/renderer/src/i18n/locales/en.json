@@ -29662,6 +29662,7 @@
     "kimiProduct": "Kimi Code",
     "cursorProduct": "Cursor CLI",
     "hermesProduct": "Hermes Agent",
+    "auggieProduct": "Auggie",
     "commandCopied": "Command copied",
     "commandNotCopied": "Could not copy the command",
     "copyCommand": "Copy",

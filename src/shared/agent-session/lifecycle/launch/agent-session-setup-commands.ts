@@ -57,6 +57,13 @@ export const AGENT_SESSION_SETUP_COMMANDS = [
     loginCommand: ['hermes', 'model'],
     installCommand: 'curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash'
   },
+  // `--json` takes the pasted sign-in response instead of the browser's localhost callback.
+  {
+    agent: 'aug',
+    loginCommand: ['auggie', 'auth', 'login', '--headless'],
+    remoteLoginCommand: ['auggie', 'auth', 'login', '--headless', '--json'],
+    installCommand: 'npm install -g @augmentcode/auggie'
+  },
   // An `agy` login signs in only chats on agy (`system`); chats on Orca's server keep their own.
   {
     agent: 'antigravity',

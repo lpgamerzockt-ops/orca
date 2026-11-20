@@ -97,6 +97,11 @@ const AGENT_CLI_UPDATE_DEFINITIONS: Record<AgentCliUpdateAgent, AgentCliUpdateDe
     updatesOutsideLauncher: true,
     latest: () => ({ kind: 'github', repo: 'NousResearch/hermes-agent', tagPrefix: 'v' }),
     plan: () => ({ runnable: false, command: 'hermes update' })
+  },
+  // `auggie upgrade` installs its prerelease channel, so the user installs npm's stable release.
+  aug: {
+    latest: () => npm('@augmentcode/auggie'),
+    plan: () => ({ runnable: false, command: 'npm install -g @augmentcode/auggie@latest' })
   }
 }
 
