@@ -47,6 +47,7 @@ import {
   MobileBotWhoCanAsk
 } from './MobileBotWhoCanAsk'
 import { isHostNotConnectedError } from '../query/host-query-errors'
+import { MobileBotToolsPage, MobileBotToolsRow } from './tools/MobileBotToolsPage'
 
 // What the host lets a phone change.
 type PhoneUpdates = Pick<
@@ -123,6 +124,7 @@ export function MobileBotSettingsTab(props: {
   })
   const [lookPage, setLookPage] = useState<LookAroundPage | null>(null)
   const [tidyPage, setTidyPage] = useState<TidyUpPage | null>(null)
+  const [toolsOpen, setToolsOpen] = useState(false)
   const tidyUp = useMobileBotTidyUp(props.client, bot.id, props.routeBot.reads, props.showToast)
   const access = props.accessRequests
 
@@ -237,6 +239,10 @@ export function MobileBotSettingsTab(props: {
         banner={offlineBanner}
       />
     )
+  }
+
+  if (toolsOpen) {
+    return <MobileBotToolsPage {...props} bot={bot} onBack={() => setToolsOpen(false)} />
   }
 
   // Any paired phone may grant (D3), so it always asks first, as the desktop does.
@@ -372,6 +378,7 @@ export function MobileBotSettingsTab(props: {
           />
         ))}
       </MobileBotWhoCanAsk>
+      <MobileBotToolsRow {...props} bot={bot} onOpen={() => setToolsOpen(true)} />
       {/* The desktop's order: general, then who can ask (connectors), then notifications. */}
       <Section title={t('bots.settings.notifications', 'Notifications')}>
         <SwitchRow
