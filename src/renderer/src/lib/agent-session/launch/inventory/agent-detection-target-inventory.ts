@@ -26,6 +26,7 @@ import {
 } from '@/store/slices/agent-inventory/managed-agent-launch-commands'
 import { getLocalAgentPreflightContext } from '@/runtime/hosts/preflight/local-preflight-context'
 import { localAgentInventoryContextKey } from '@/runtime/hosts/preflight/local-preflight-context-key'
+import { getRendererAppPlatform } from '@/app-shell/platform/renderer-app-platform'
 
 type DetectionReadState = Pick<
   AppState,

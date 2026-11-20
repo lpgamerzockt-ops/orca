@@ -12,6 +12,7 @@ import type { TuiAgent } from '../../../../shared/agent-launch/catalog/tui-agent
 import type { AgentStartupShell } from '../../../../shared/agent-launch/startup/tui-agent-startup-shell'
 import { resolveWslHostAgentCmdOverrides } from './wsl-host-agent-terminal-launch'
 import { readHostManagedAgentCommandsSync } from '../../rpc/methods/host-management/managed-copy-detection'
+import type { ManagedCopySettings } from '../../../acp/launch/acp-launch-contract'
 import {
   type AiVaultResumeLaunchSettings,
   assertAiVaultCopiedSessionStoreAllowed,
@@ -23,7 +24,7 @@ import { getAiVaultResumeCodexHome } from '../../../../shared/ai-vault/resume/ai
 /** One native execution fact builds the line and chooses the shell that receives it. */
 export function buildMobileTerminalChatFork(args: {
   prepared: AiVaultPrepareSessionResumeResult
-  settings: AiVaultResumeLaunchSettings
+  settings: AiVaultResumeLaunchSettings & ManagedCopySettings
   runtime: AgentLaunchRuntime
 }): MobileTerminalCommand & {
   command: string
