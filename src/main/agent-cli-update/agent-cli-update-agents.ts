@@ -97,7 +97,10 @@ const AGENT_CLI_UPDATE_DEFINITIONS: Record<AgentCliUpdateAgent, AgentCliUpdateDe
     updatesOutsideLauncher: true,
     latest: () => ({ kind: 'github', repo: 'NousResearch/hermes-agent', tagPrefix: 'v' }),
     plan: () => ({ runnable: false, command: 'hermes update' })
-  }
+  },
+  // Both upgrade the way they were installed, as OpenCode 1.x does.
+  kilo: { latest: () => npm('@kilocode/cli'), plan: selfUpdate('upgrade') },
+  'mimo-code': { latest: () => npm('@mimo-ai/cli'), plan: selfUpdate('upgrade') }
 }
 
 export function agentCliUpdateDefinition(agent: AgentCliUpdateAgent): AgentCliUpdateDefinition {

@@ -93,6 +93,9 @@ const NATIVE_CHAT_AGENT_PROFILES: Record<NativeChatAgent, NativeChatAgentProfile
   hermes: null,
   // Both report their user and project skills as `skill:<name>`, at rest too.
   kimi: null,
+  // Orca knows no skill folders of theirs; their sessions report what they load as commands.
+  kilo: null,
+  'mimo-code': null,
   omp: null
 }
 

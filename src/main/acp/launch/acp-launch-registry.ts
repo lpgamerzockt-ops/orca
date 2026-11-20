@@ -33,6 +33,8 @@ import { COPILOT_LAUNCH_SPEC } from '../../copilot/copilot-acp-launch-spec'
 import { KIMI_LAUNCH_SPEC } from '../../kimi/kimi-acp-launch-spec'
 import { CURSOR_LAUNCH_SPEC } from '../../cursor/cursor-acp-launch-spec'
 import { HERMES_LAUNCH_SPEC } from '../../hermes/hermes-acp-launch-spec'
+import { KILO_LAUNCH_SPEC } from '../../kilo/kilo-acp-launch-spec'
+import { MIMO_LAUNCH_SPEC } from '../../mimo/mimo-acp-launch-spec'
 import type { AcpLaunchSpec } from './acp-launch-contract'
 import { OPENCODE_MINIMUM_VERSIONS, OPENCODE2_MINIMUM_VERSIONS } from './acp-minimum-versions'
 
@@ -166,7 +168,9 @@ export const ACP_LAUNCH_SPECS: readonly AcpLaunchSpec[] = [
   COPILOT_LAUNCH_SPEC,
   KIMI_LAUNCH_SPEC,
   CURSOR_LAUNCH_SPEC,
-  HERMES_LAUNCH_SPEC
+  HERMES_LAUNCH_SPEC,
+  KILO_LAUNCH_SPEC,
+  MIMO_LAUNCH_SPEC
 ]
 
 export function acpLaunchSpecFor(agent: string): AcpLaunchSpec | null {

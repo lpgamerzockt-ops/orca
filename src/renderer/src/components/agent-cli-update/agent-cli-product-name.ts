@@ -31,5 +31,9 @@ export function agentCliProductName(
       return t('agentCliUpdate.cursorProduct', 'Cursor CLI')
     case 'hermes':
       return t('agentCliUpdate.hermesProduct', 'Hermes Agent')
+    case 'kilo':
+      return t('agentCliUpdate.kiloProduct', 'Kilo CLI')
+    case 'mimo-code':
+      return t('agentCliUpdate.mimoCodeProduct', 'MiMo Code')
   }
 }

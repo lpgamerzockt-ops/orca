@@ -57,6 +57,17 @@ export const AGENT_SESSION_SETUP_COMMANDS = [
     loginCommand: ['hermes', 'model'],
     installCommand: 'curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash'
   },
+  {
+    agent: 'kilo',
+    loginCommand: ['kilo', 'auth', 'login'],
+    installCommand: 'curl -fsSL https://kilo.ai/cli/install | bash'
+  },
+  {
+    agent: 'mimo-code',
+    loginCommand: ['mimo', 'auth', 'login'],
+    installCommand: 'curl -fsSL https://mimo.xiaomi.com/install | bash',
+    windowsInstallScript: 'https://mimo.xiaomi.com/install.ps1'
+  },
   // An `agy` login signs in only chats on agy (`system`); chats on Orca's server keep their own.
   {
     agent: 'antigravity',
