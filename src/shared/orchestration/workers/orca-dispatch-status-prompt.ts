@@ -54,8 +54,12 @@ export function compactDispatchPromptForStatus(
   }
   const scan = value.slice(start, Math.min(value.length, ORCA_DISPATCH_STATUS_SOURCE_SCAN_LIMIT))
 
+  const taskMarkerIndex = findOrcaDispatchTaskMarkerIndex(scan)
   let taskId = ''
-  const idMarkerIndex = scan.indexOf(ORCA_DISPATCH_STATUS_TASK_ID_MARKER)
+  // The id belongs to the preamble; an id phrase inside the task body must not re-parse as one on a later pass.
+  const idMarkerIndex = scan
+    .slice(0, taskMarkerIndex === -1 ? scan.length : taskMarkerIndex)
+    .indexOf(ORCA_DISPATCH_STATUS_TASK_ID_MARKER)
   if (idMarkerIndex !== -1) {
     const afterId = scan.slice(idMarkerIndex + ORCA_DISPATCH_STATUS_TASK_ID_MARKER.length)
     let idStart = 0
@@ -68,7 +72,6 @@ export function compactDispatchPromptForStatus(
   }
 
   let taskBody = ''
-  const taskMarkerIndex = findOrcaDispatchTaskMarkerIndex(scan)
   if (taskMarkerIndex !== -1) {
     const body = scan.slice(taskMarkerIndex + ORCA_DISPATCH_STATUS_TASK_MARKER.length)
     for (const line of body.split(/\r?\n/)) {
@@ -88,10 +91,11 @@ export function compactDispatchPromptForStatus(
   if (taskId) {
     compact += ` ${ORCA_DISPATCH_STATUS_TASK_ID_MARKER} ${taskId}`
   }
-  if (taskBody) {
+  // A body the length cap cuts off entirely would leave a bare marker the next pass drops; keep previews idempotent.
+  if (taskBody && compact.length + ORCA_DISPATCH_STATUS_TASK_MARKER.length + 2 < maxLength) {
     compact += ` ${ORCA_DISPATCH_STATUS_TASK_MARKER} ${taskBody}`
   }
-  return normalizeSingleLine(compact, maxLength)
+  return normalizeSingleLine(compact, maxLength).trimEnd()
 }
 
 /** Require standalone === TASK === in multiline preambles because repository-controlled commit subjects may quote it.

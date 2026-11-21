@@ -55,23 +55,11 @@ export function deepFreezeAgentStatusStoreValue<T>(value: T): T {
   return Object.freeze(value)
 }
 
-function freezeStoredAgentStatusParentRecord(
+export function freezeStoredAgentStatusParentRecord(
   record: AgentStatusParentRecord
 ): StoredAgentStatusParentRecord {
   // oxlint-disable-next-line typescript/consistent-type-assertions -- SAFETY: The row is deep-frozen here, which is what the brand promises readers.
   return deepFreezeAgentStatusStoreValue(record) as StoredAgentStatusParentRecord
-}
-
-/** Status normalization isn't idempotent for every input (a collapsed preview can newly read as a dispatch prompt),
- *  so store the second pass: reads then return what re-parsing the stored row would. */
-export function parseStoredAgentStatusParentRecord(
-  value: unknown
-): StoredAgentStatusParentRecord | null {
-  const once = parseAgentStatusParentRecord(value)
-  if (!once) {
-    return null
-  }
-  return freezeStoredAgentStatusParentRecord(parseAgentStatusParentRecord(once) ?? once)
 }
 
 export function agentStatusFactMapKey(fact: AgentStatusFactIdentity): string {
@@ -247,7 +235,7 @@ export function agentStatusStoreStateFromSnapshot(
   const state = createEmptyAgentStatusStoreState(epoch)
   state.revision = snapshot.revision
   for (const parent of snapshot.parents) {
-    const record = parseStoredAgentStatusParentRecord(parent)
+    const record = parseAgentStatusParentRecord(parent)
     if (!record) {
       return null
     }
@@ -255,7 +243,7 @@ export function agentStatusStoreStateFromSnapshot(
     if (state.parents.has(key)) {
       return null
     }
-    state.parents.set(key, record)
+    state.parents.set(key, freezeStoredAgentStatusParentRecord(record))
   }
   for (const child of snapshot.children) {
     const record = parseAgentChildWorkRecord(child)

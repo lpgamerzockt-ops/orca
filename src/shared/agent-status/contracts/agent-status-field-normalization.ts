@@ -48,13 +48,15 @@ export function normalizePromptField(value: unknown): string {
   if (tookOver !== null) {
     return normalizeSingleLinePreview(tookOver, AGENT_STATUS_MAX_FIELD_LENGTH)
   }
-  return (
-    compactDispatchPromptForStatus(
-      value,
-      AGENT_STATUS_MAX_FIELD_LENGTH,
-      normalizeSingleLinePreview
-    ) ?? normalizeSingleLinePreview(value, AGENT_STATUS_MAX_FIELD_LENGTH)
-  )
+  const compact = (text: string) =>
+    compactDispatchPromptForStatus(text, AGENT_STATUS_MAX_FIELD_LENGTH, normalizeSingleLinePreview)
+  const dispatch = compact(value)
+  if (dispatch !== null) {
+    return dispatch
+  }
+  const preview = normalizeSingleLinePreview(value, AGENT_STATUS_MAX_FIELD_LENGTH)
+  // Folding whitespace can make a near-dispatch prompt dispatch-shaped; compact it now so a second pass changes nothing.
+  return compact(preview) ?? preview
 }
 
 function normalizeSingleLinePreview(value: string, maxLength: number): string {
