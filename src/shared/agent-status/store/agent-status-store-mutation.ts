@@ -17,15 +17,12 @@ import {
   AGENT_STATUS_STORE_TOMBSTONE_RETENTION_REVISIONS
 } from './agent-status-store-contract'
 import { parseAgentStatusFactRecord } from './agent-status-store-fact-codec'
-import {
-  parseAgentStatusParentRecord,
-  type StoredAgentStatusParentRecord
-} from './agent-status-store-parent'
+import type { StoredAgentStatusParentRecord } from './agent-status-store-parent'
 import {
   agentStatusFactMapKey,
   agentStatusTombstoneMapKey,
   deepFreezeAgentStatusStoreValue,
-  freezeStoredAgentStatusParentRecord
+  parseStoredAgentStatusParentRecord
 } from './agent-status-store-state'
 import type { AgentStatusStoreTable } from './agent-status-store-table'
 import {
@@ -163,7 +160,7 @@ function upsertParent(
     return false
   }
   const previous = state.parents.get(key)
-  const record = parseAgentStatusParentRecord({
+  const record = parseStoredAgentStatusParentRecord({
     ...input,
     ...(input.firstObservedAt === undefined && previous?.firstObservedAt !== undefined
       ? { firstObservedAt: previous.firstObservedAt }
@@ -173,7 +170,7 @@ function upsertParent(
   if (!record) {
     return false
   }
-  state.parents.set(key, freezeStoredAgentStatusParentRecord(record))
+  state.parents.set(key, record)
   return true
 }
 
