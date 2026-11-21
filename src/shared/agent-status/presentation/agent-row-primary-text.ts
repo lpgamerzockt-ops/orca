@@ -87,7 +87,11 @@ export function getOrcaDispatchTaskId(prompt: string): string | null {
     return null
   }
   const scan = prompt.slice(start, start + ORCA_DISPATCH_TASK_ID_SCAN_LIMIT)
-  const markerIndex = scan.indexOf(ORCA_DISPATCH_TASK_ID_MARKER)
+  // Match the status normalizer: the id comes from the preamble, never from the task body.
+  const taskMarkerIndex = findOrcaDispatchTaskMarkerIndex(scan)
+  const markerIndex = scan
+    .slice(0, taskMarkerIndex === -1 ? scan.length : taskMarkerIndex)
+    .indexOf(ORCA_DISPATCH_TASK_ID_MARKER)
   if (markerIndex === -1) {
     return null
   }

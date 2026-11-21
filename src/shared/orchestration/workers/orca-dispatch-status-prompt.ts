@@ -95,7 +95,11 @@ export function compactDispatchPromptForStatus(
   if (taskBody && compact.length + ORCA_DISPATCH_STATUS_TASK_MARKER.length + 2 < maxLength) {
     compact += ` ${ORCA_DISPATCH_STATUS_TASK_MARKER} ${taskBody}`
   }
-  return normalizeSingleLine(compact, maxLength).trimEnd()
+  const preview = normalizeSingleLine(compact, maxLength).trimEnd()
+  // The cap's surrogate trim can still drop a one-character body; never end on a bare marker.
+  return preview.endsWith(` ${ORCA_DISPATCH_STATUS_TASK_MARKER}`)
+    ? preview.slice(0, -ORCA_DISPATCH_STATUS_TASK_MARKER.length - 1).trimEnd()
+    : preview
 }
 
 /** Require standalone === TASK === in multiline preambles because repository-controlled commit subjects may quote it.
