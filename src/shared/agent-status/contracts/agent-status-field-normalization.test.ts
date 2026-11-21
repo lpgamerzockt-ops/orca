@@ -71,6 +71,11 @@ describe('normalizePromptField dispatch previews', () => {
       expected: `${preamble} Your task ID is: ${'x'.repeat(120)}`
     },
     {
+      name: 'a body that is itself the task marker',
+      prompt: `${preamble}\nYour task ID is: t1\n=== TASK ===\n=== TASK ===`,
+      expected: `${preamble} Your task ID is: t1 === TASK === === TASK ===`
+    },
+    {
       name: 'an id phrase inside the task body',
       prompt: `${preamble} === TASK === Your task ID is: ${taskId}`,
       expected: `${preamble} === TASK === Your task ID is: ${taskId}`

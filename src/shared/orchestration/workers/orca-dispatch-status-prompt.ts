@@ -91,15 +91,17 @@ export function compactDispatchPromptForStatus(
   if (taskId) {
     compact += ` ${ORCA_DISPATCH_STATUS_TASK_ID_MARKER} ${taskId}`
   }
-  // A body the length cap cuts off entirely would leave a bare marker the next pass drops; keep previews idempotent.
-  if (taskBody && compact.length + ORCA_DISPATCH_STATUS_TASK_MARKER.length + 2 < maxLength) {
-    compact += ` ${ORCA_DISPATCH_STATUS_TASK_MARKER} ${taskBody}`
+  if (taskBody) {
+    const withBody = normalizeSingleLine(
+      `${compact} ${ORCA_DISPATCH_STATUS_TASK_MARKER} ${taskBody}`,
+      maxLength
+    ).trimEnd()
+    // Keep the marker only when some body survives the cap; a bare marker is dropped by the next pass.
+    if (withBody.length > compact.length + ORCA_DISPATCH_STATUS_TASK_MARKER.length + 1) {
+      return withBody
+    }
   }
-  const preview = normalizeSingleLine(compact, maxLength).trimEnd()
-  // The cap's surrogate trim can still drop a one-character body; never end on a bare marker.
-  return preview.endsWith(` ${ORCA_DISPATCH_STATUS_TASK_MARKER}`)
-    ? preview.slice(0, -ORCA_DISPATCH_STATUS_TASK_MARKER.length - 1).trimEnd()
-    : preview
+  return normalizeSingleLine(compact, maxLength).trimEnd()
 }
 
 /** Require standalone === TASK === in multiline preambles because repository-controlled commit subjects may quote it.
